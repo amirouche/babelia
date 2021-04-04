@@ -1,0 +1,14 @@
+*.ss~
+*.ss#*
+.#*.ss
+
+*.scm~
+*.scm#*
+.#*.scm
+*.wpo
+*.so
+
+profile/
+local/
+
+arew-scheme.*
