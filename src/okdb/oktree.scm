@@ -6,10 +6,40 @@
   (import (scheme base)
           (scheme fixnum))
 
+  ;; oktree is a persistent binary balanced binary tree that use
+  ;; logarithmic measure to (try...) to balance the tree. It only
+  ;; support bytevector as keys. It can only have `fx-greatest` keys
+  ;; in the tree.
+
+  ;; TODO: add reference to the paper and re-read it.
+
+  ;; TODO: do some tests to see if it properly balanced.
+
+  (define (lexicographer bytevector other)
+    ;; Return 'less if BYTEVECTOR is before OTHER, 'equal if equal and
+    ;; otherwise 'more
+    (let ((end (min (bytevector-length bytevector)
+                    (bytevector-length other))))
+      (let loop ((index 0))
+        (if (fx=? end index)
+            (if (fx= (bytevector-length bytevector)
+                     (bytevector-length other))
+                'equal
+                (if (fx<? (bytevector-length bytevector)
+                          (bytevector-length other))
+                    'less
+                    'more))
+            (let ((delta (fx- (bytevector-u8-ref bytevector index)
+                              (bytevector-u8-ref other index))))
+              (if (fxzero? delta)
+                  (loop (fx+ 1 index))
+                  (if (fxnegative? delta)
+                      'less
+                      'more)))))))
+
   (define-record-type <oktree>
-    (%make-oktree comparator root)
+    (%make-oktree root)
     oktree?
-    (comparator oktree-comparator)
     (root oktree-root))
 
   (define-record-type <node>
@@ -24,8 +54,8 @@
   (define (node-size maybe-node)
     (if maybe-node (%node-size maybe-node) 0))
 
-  (define (make-oktree comparator)
-    (%make-oktree comparator #f))
+  (define (make-oktree)
+    (%make-oktree #f))
 
   (define (oktree-empty? oktree)
     (not (oktree-root oktree)))
@@ -108,28 +138,29 @@
     (if (not node)
         (make-node key value 1 #f #f)
         ;; XXX: For some reason, slib wttree will compare twice using
-        ;; less? using a comparator it it possible to use equal predicate,
-        ;; or better use the three-way if.
-        (cond
-         ((less? key (node-key node))
+        ;; less? using a comparator it it possible to use equal
+        ;; predicate, or better use the three-way if.
+        (case (lexicographer key (node-key node))
+         ((less)
           ;; KEY is less than current key, recurse left side
           (node-rebalance (node-key node)
                           (node-value node)
                           (node-set (node-left node) less? key value)
                           (node-right node)))
-         ((less? (node-key node) key)
+         ((more)
           ;; KEY is more than current key, recurse right side
           (node-rebalance (node-key node)
                           (node-value node)
                           (node-left node)
                           (node-set (node-right node) less? key value)))
          (else
-          ;; Otherwise, the current KEY is the one, create a new node with
-          ;; associated VALUE.
+          ;; Otherwise, the current KEY is the one, create a new node
+          ;; with associated VALUE, re-using node-left and node-right.
+          ;; No need to rebalance.
           (make-node key
                      value
-                     (fx+ (fx+ (node-size (node-left node))
-                               (node-size (node-right node)))
+                     (fx+ (node-size (node-left node))
+                          (node-size (node-right node))
                           1)
                      (node-left node)
                      (node-right node))))))
