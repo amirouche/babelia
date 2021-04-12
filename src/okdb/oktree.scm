@@ -76,8 +76,8 @@
   (define (node-join key value left right)
     (make-node key
                value
-               (fx+ (fx+ (node-size left)
-                         (node-size right))
+               (fx+ (node-size left)
+                    (node-size right)
                     1)
                left
                right))
@@ -128,8 +128,8 @@
           (double-right-rotation key value left right)))
      (else (make-node key
                       value
-                      (fx+ (fx+ (node-size left)
-                                (node-size right))
+                      (fx+ (node-size left)
+                           (node-size right)
                            1)
                       left
                       right))))
