@@ -1,6 +1,7 @@
 (library (okdb oktree)
   (export make-oktree
           oktree-set
+          oktree-ref
           oktree->alist)
 
   (import (scheme base)
@@ -175,10 +176,22 @@
                                 key
                                 value))))
 
+  (define (oktree-ref oktree key)
+
+    (define (ref node)
+      (case (lexicographer key (node-key node))
+        ((less) (and (node-left node) (ref (node-left node))))
+        ((more) (and (node-right node) (ref (node-right node))))
+        (else (node-value node))))
+
+    (if (oktree-empty? oktree)
+        #f
+        (ref (oktree-root oktree))))
+
   (define (oktree->alist oktree)
     (define (node->alist node)
       (append (if (node-left node) (node->alist (node-left node)) '())
               (list (cons (node-key node) (node-value node)))
               (if (node-right node) (node->alist (node-right node)) '())))
 
-    (node->alist (oktree-root oktree))))
+    (node->alist (oktree-root oktree)))
