@@ -2,19 +2,23 @@
   (export make-oktree
           oktree-set
           oktree-ref
-          oktree->alist)
+          oktree->alist
+          oktree-cursor-next!?
+          oktree-cursor-position?
+          oktree-cursor-previous!?
+          oktree-cursor-seek!)
 
   (import (scheme base)
           (scheme fixnum))
 
-  ;; oktree is a persistent binary balanced binary tree that use
-  ;; logarithmic measure to (try...) to balance the tree. It only
-  ;; support bytevector as keys. It can only have `fx-greatest` keys
-  ;; in the tree.
+  ;; oktree is a persistent balanced binary tree that use logarithmic
+  ;; measure to (try...) to keep the tree balanced. It only support
+  ;; bytevector as keys. It can only have `fx-greatest` keys in the
+  ;; tree.
 
   ;; TODO: add reference to the paper and re-read it.
 
-  ;; TODO: do some tests to see if it properly balanced.
+  ;; TODO: do some tests to see if it is properly balanced.
 
   (define (lexicographer bytevector other)
     ;; Return 'less if BYTEVECTOR is before OTHER, 'equal if equal and
@@ -127,15 +131,10 @@
                             (node-size (node-left left)))
           (single-right-rotation key value left right)
           (double-right-rotation key value left right)))
-     (else (make-node key
-                      value
-                      (fx+ (node-size left)
-                           (node-size right)
-                           1)
-                      left
-                      right))))
+     (else (node-join key value left right))))
 
-  (define (node-set node less? key value)
+
+  (define (node-set node key value)
     (if (not node)
         (make-node key value 1 #f #f)
         ;; XXX: For some reason, slib wttree will compare twice using
@@ -146,14 +145,14 @@
           ;; KEY is less than current key, recurse left side
           (node-rebalance (node-key node)
                           (node-value node)
-                          (node-set (node-left node) less? key value)
+                          (node-set (node-left node) key value)
                           (node-right node)))
          ((more)
           ;; KEY is more than current key, recurse right side
           (node-rebalance (node-key node)
                           (node-value node)
                           (node-left node)
-                          (node-set (node-right node) less? key value)))
+                          (node-set (node-right node) key value)))
          (else
           ;; Otherwise, the current KEY is the one, create a new node
           ;; with associated VALUE, re-using node-left and node-right.
@@ -167,14 +166,9 @@
                      (node-right node))))))
 
   (define (oktree-set oktree key value)
-    (if (oktree-empty? oktree)
-        (%make-oktree (oktree-comparator oktree)
-                      (make-node key value 1 #f #f))
-        (%make-oktree (oktree-comparator oktree)
-                      (node-set (oktree-root oktree)
-                                (oktree-comparator oktree)
-                                key
-                                value))))
+    (%make-oktree (node-set (oktree-root oktree)
+                            key
+                            value)))
 
   (define (oktree-ref oktree key)
 
@@ -195,3 +189,148 @@
               (if (node-right node) (node->alist (node-right node)) '())))
 
     (node->alist (oktree-root oktree)))
+
+  (define-record-type <oktree-cursor>
+    (make-cursor oktree node stack)
+    cursor?
+    (oktree cursor-oktree)
+    (node cursor-node cursor-node!)
+    (stack cursor-stack cursor-stack!))
+
+  (define (call-with-oktree-cursor oktree proc)
+    (proc (make-cursor oktree #f '())))
+
+  (define (oktree-cursor-position? cursor)
+    (not (not (cursor-node cursor))))
+
+  (define (node-seek-min node stack)
+    (if (node-left node)
+        (node-seek-min (node-left node) (cons node stack))
+        (values node stack)))
+
+  (define (node-seek-max node stack)
+    (if (node-right node)
+        (node-seek-max (node-right node) (cons node stack))
+        (values node stack)))
+
+  (define (oktree-cursor-seek! cursor strategy key)
+
+    (define (cursor-seek-equal)
+      (define (seek node stack)
+        (case (lexicographer key (node-key node))
+          ((less) (if (node-left node)
+                      (seek (node-left node) (cons node stack))
+                      (values 'less node stack)))
+          ((more) (if (node-right node)
+                      (seek (node-right node) (cons node stack))
+                      (values 'more node stack)))
+          (else (values 'equal node stack))))
+
+      (seek (oktree-root (cursor-oktree cursor)) '()))
+
+    (define (cursor-seek-equal!)
+      (call-with-values cursor-seek-equal
+        (lambda (found node stack)
+          (case found
+            ((less) 'not-found)
+            ((more) 'not-found)
+            ((equal)
+             (cursor-node! cursor node)
+             (cursor-stack! cursor stack)
+             'equal)))))
+
+    (define (cursor-seek-less-or-equal!)
+
+      (call-with-values cursor-seek-equal
+        (lambda (found node stack)
+          (case found
+            ((less) 'not-found)
+            ((more)
+             ;; KEY is bigger than (node-key node) and there is no
+             ;; more near, while not being more than KEY.
+             (cursor-node! cursor node)
+             (cursor-stack! cursor stack)
+             'less)
+            ((equal) (if (node-left node)
+                         (call-with-values (lambda () (seek-max (node-left node) stack))
+                           (lambda (node stack)
+                             (cursor-node! cursor node)
+                             (cursor-stack! cursor stack)
+                             'less))
+                         (begin
+                           (cursor-node! cursor node)
+                           (cursor-stack! cursor stack)
+                           'equal)))))))
+
+    (define (cursor-seek-greather-or-equal!)
+
+      (call-with-values cursor-seek-equal
+        (lambda (found node stack)
+          (case found
+            ((less)
+             ;; KEY is smaller than (node-key node) and there is no
+             ;; more near, while not being less than KEY.
+             (cursor-node! cursor node)
+             (cursor-stack! cursor stack)
+             'more)
+            ((more) 'not-found)
+            ((equal) (if (node-right node)
+                         (call-with-values (lambda () (seek-min (node-right node) stack))
+                           (lambda (node stack)
+                             (cursor-node! cursor node)
+                             (cursor-stack! cursor stack)
+                             'more))
+                         (begin
+                           (cursor-node! cursor node)
+                           (cursor-stack! cursor stack)
+                           'equal)))))))
+
+    (case strategy
+      ((less-than-or-equal) (cursor-seek-less-or-equal!))
+      ((equal) (cursor-seek-equal!))
+      ((greather-than-or-equal) (cursor-seek-greather-or-equal!))))
+
+  (define (oktree-cursor-next!? cursor)
+    (define node (cursor-node cursor))
+    (define right (node-right node))
+    (define stack (cursor-stack cursor))
+
+    (if right
+        (call-with-values (lambda () (node-seek-min right (cons node stack)))
+          (lambda (node stack)
+            (cursor-node! cursor node)
+            (cursor-stack! cursor stack)))
+        (let loop ((stack stack) (node node))
+          (if (null? stack)
+              #f
+              (let ((up (car stack)))
+                (let ((up-right (node-right node)))
+                  (if (eq? up-right node)
+                      (loop (cdr stack) up)
+                      (begin
+                        (cursor-node! cursor (node-seek-min (node-right up)))
+                        (cursor-stack! cursor (cdr stack))
+                        #t))))))))
+
+  (define (oktree-cursor-previous!? cursor)
+    (define node (cursor-node cursor))
+    (define left (node-left node))
+    (define stack (cursor-stack cursor))
+
+    (if left
+        (call-with-values (lambda () (node-seek-max left (cons node stack)))
+          (lambda (node stack)
+            (cursor-node! cursor node)
+            (cursor-stack! cursor stack)))
+        (let loop ((stack stack)
+                   (node node))
+          (if (null? stack)
+              #f
+              (let ((up (car stack)))
+                (let ((up-left (node-left node)))
+                  (if (eq? up-left node)
+                      (loop (cdr stack) up)
+                      (begin
+                        (cursor-node! cursor (node-seek-max (node-left up)))
+                        (cursor-stack! cursor (cdr stack))
+                        #t)))))))))
