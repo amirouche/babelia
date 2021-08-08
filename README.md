@@ -25,7 +25,7 @@ per Babelia instance.
 
 Backend:
 
-- Chez Scheme (backend language)
+- Chez Scheme (programming language)
 - FoundationDB (database)
 - SQLite LSM extension (database)
 - libtls (bsd project, or curl)
