@@ -1,8 +1,8 @@
-# Ruse Scheme
+# Babelia
 
 **experimental**
 
-## Babelia
+## Introduction
 
 Babelia is a privacy friendly, decentralized, open source, and
 accessible search engine. Search has been an essential part of
