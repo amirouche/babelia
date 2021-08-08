@@ -8,11 +8,11 @@ Babelia is a privacy friendly, decentralized, open source, and
 accessible search engine. Search has been an essential part of
 knowledge acquisition from the dawn of time, whether it is antique
 lexicographically ordered filing cabinets or nowadays computer-based
-wonders such as Google or Bing. From casual search to help achieve
-common tasks such as cooking, keeping up with the news, a regular dose
-of cat memes or professional search such as science research. Search
-is, and will remain, an essential daily-use tool, and stires human
-progress forward.
+wonders such as Google, Bing, Yandex, and Baidu. From casual search to
+help achieve common tasks such as cooking, keeping up with the news, a
+regular dose of cat memes, or professional search such as science
+research. Search is, and will remain, an essential daily-use tool, and
+stires human progress forward.
 
 Babelia aims to replace the use of privateer search engines with a
 search engine that is open, hence under the control of the
@@ -30,21 +30,18 @@ Backend:
 - SQLite LSM extension (database)
 - libtls (bsd project, or curl)
 - zstandard (facebook's compression library)
-- blake3 (?)
+- blake3 (hash)
 - argon2 (password hashing)
 
 Frontend:
 
-- Ruse Scheme (frontend language)
-- preactjs (frontend view library)
-- Bootstrap (frontend styles)
+- JavaScript
+- Bootstrap (styles)
 
 Also:
 
 - Debian (GNU/Linux distribution)
 - nginx (HTTP proxy)
-- Python (tooling)
-- CoCrawler
 
 ## License
 
