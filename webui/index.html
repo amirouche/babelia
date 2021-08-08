@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="static/normalize.css" rel="stylesheet" type="text/css">
+    <link href="static/main.css" rel="stylesheet" type="text/css">
+    <title>Hello, world!</title>
+  </head>
+  <body>
+    <div id="babelia-background">
+      <video autoplay loop poster="static/video/poster.jpeg">
+        <source src="static/video/space.mp4" type="video/mp4"/>
+        <source src="static/video/space.webm" type="video/webm"/>
+      </video>
+    </div>
+
+    <div id="babelia-overlay">
+    </div>
+
+    <div id="babelia-root">
+      <div id="babelia-intro">
+        <p>🚀 Welcome to <a href="https://babelia.hyper.dev">babelia.hyper.dev</a>. This software is a <b>work-in-progress</b>, use it at your own risk!️</p>
+      </div>
+
+      <div class="babelia-convo babelia-bot">
+        <p>
+          🤖 Hello, I am Babelia, a computer program dedicated to ease
+          your (re)search journey, and possibly stire human progress
+          forward!
+        </p>
+        <p>
+          Please submit a query in the following <i>mighty</i> input box.
+        </p>
+      </div>
+
+      <div class="babelia-convo babelia-monkey">
+        <p>
+          🐒 Register an account
+        </p>
+      </div>
+
+      <div class="babelia-convo babelia-bot">
+        <p>
+          🤖 Stellar! What is your favorite nickname?
+        </p>
+      </div>
+
+      <div class="babelia-convo babelia-monkey">
+        <p>
+          🐒 aneglux
+        </p>
+      </div>
+
+      <div class="babelia-convo">
+        <p>
+          🤖 Input a secure new password in the following box.
+        </p>
+      </div>
+
+      <form method="POST" action="/" class="babelia-input babelia-convo">
+        <input type="password" name="password" placeholder="Secure password?!"/>
+        <input type="submit" value="submit"/>
+      </form>
+
+      <div class="babelia-convo">
+        <p>
+          🤖 I guess it will do. Repeat the password in the next box.
+        </p>
+      </div>
+
+      <form method="POST" action="/" class="babelia-input babelia-convo">
+        <input type="password" name="confirmation" placeholder="Same secure password?!"/>
+        <input type="submit" value="submit"/>
+      </form>
+
+      <div class="babelia-convo babelia-bot">
+        <p>
+          🤖 Great! You are now registered and logged in. Next time, type <code>`login`</code>,
+          to resume your session.
+        </p>
+        <p>
+          Please submit a query in the following <i>mighty</i> input box.
+        </p>
+      </div>
+
+      <div class="babelia-convo babelia-monkey">
+        <p>
+          🐒 hyper dev scheme
+        </p>
+      </div>
+
+      <div class="babelia-convo babelia-bot">
+        <p>
+          🤖 re <code>`hyper dev scheme`</code>; there is a page entitled <a href="https://hyper.dev">hyper.dev · forward & beyond</a>, the first few lines are: <i>Chaos: The Last Question Codex: Dubito, ergo Cogito, ergo Sum (import (okdb)) NLnet supports Babelia Versioned generic tuple store 2 An open letter to Mez Breeze okvslite mutation: review & rework of mutmut</i>.
+        </p>
+        <p>
+          Type <code>`next`</code> to get the following result, or issue another query.
+        </p>
+      </div>
+
+      <form method="POST" action="/" class="babelia-input babelia-convo">
+        <input type="text" name="query" placeholder="What are you up to?..."/>
+        <input type="submit" value="submit"/>
+      </form>
+
+    </div>
+
+    <script src="static/biwaschema.js">
+     (load "static/main.scm")
+    </script>
+
+  </body>
+</html>
